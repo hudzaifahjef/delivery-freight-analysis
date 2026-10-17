@@ -47,3 +47,14 @@ SELECT TOP 10
 FROM seller_stats ss
 JOIN dw.dim_sellers ds ON ss.seller_id = ds.seller_id
 ;
+
+
+-- #3 Percentile Lead Time
+SELECT DISTINCT
+  CAST(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY days_seller_processing) OVER () AS DECIMAL(5,1)) AS seller_p50,
+  CAST(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY days_seller_processing) OVER () AS DECIMAL(5,1)) AS seller_p90,
+  CAST(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY days_transit) OVER () AS DECIMAL(5,1)) AS transit_p50,
+  CAST(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY days_transit) OVER () AS DECIMAL(5,1)) AS transit_p90,
+  CAST(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY days_total) OVER () AS DECIMAL(5,1)) AS total_p50,
+  CAST(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY days_total) OVER () AS DECIMAL(5,1)) AS total_p90
+FROM dw.vw_order_kpi;
