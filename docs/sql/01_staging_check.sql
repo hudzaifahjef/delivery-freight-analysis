@@ -46,5 +46,6 @@ SELECT 'orders' AS tbl, COUNT(*) AS n FROM stg.olist_orders_dataset
   UNION ALL SELECT 'product_id', COUNT(*) FROM stg.olist_products_dataset
   UNION ALL SELECT 'column1', COUNT(*) FROM stg.product_category_name_translation
 ;
--- Result: orders 99,441 | order_items, sellers, customers: (add after running)
--- Add the other Olist tables (payments, reviews, products, geolocation) here if you import them.
+-- Result: orders 99,441 | order_items 112650 | sellers 3095 | customers 9941 
+-- | geolocation_zip_code_prefix 100163 | order_id 103886 | review_id 99224
+-- | product_id 32951 | column1 72
