@@ -1,3 +1,57 @@
+/* =====================================================================
+   Project  : Delivery Performance & Freight Cost Analysis
+   File     : 05_analysis.sql
+   Purpose  : Answer the business questions listed in README.md
+   Database : SQL Server, database LogistikPortfolio
+   Depends  : 03_model_dw.sql (dw.fact_orders, dw.fact_order_items,
+              dw.dim_customers, dw.dim_sellers)
+              04_kpi_views.sql (dw.vw_order_kpi)
+   Run order: top to bottom. Section 3 and section 4 each create a
+              temp table first; the queries below them read from it.
+              Temp tables disappear when the SSMS window is closed.
+   Notes    : - Late order = delivered after the estimated date.
+              - Only rows with quality_flag = 'ok' are analysed
+                (see docs/data_quality_log.md).
+              - "Result" comments record what each query returned
+                when last run, so the README numbers can be traced.
+   ===================================================================== */
+ 
+USE LogistikPortfolio;
+GO
+
+
+/* ---------------------------------------------------------------------
+   1. Overall KPI
+   Question : What share of deliveries is late, and which stage is slower?
+   --------------------------------------------------------------------- */
+SELECT
+  COUNT(*)                                              AS total_ok,
+  SUM(is_late)                                          AS total_late,
+  CAST(100.0 * SUM(is_late) / COUNT(*) AS DECIMAL(5,2)) AS late_pct,
+  CAST(AVG(days_seller_processing) AS DECIMAL(5,2))     AS avg_seller_days,
+  CAST(AVG(days_transit) AS DECIMAL(5,2))               AS avg_transit_days
+FROM dw.vw_order_kpi;
+-- Result: 96,281 orders | 7,822 late | 8.12% | seller 2.80 days | transit 9.33 days
+	
+
+/* ---------------------------------------------------------------------
+   2. Lead time percentiles
+   Question : What is the typical wait (P50) and the bad-case wait (P90)?
+   Why      : Averages are pulled up by extreme orders; percentiles are not.
+   --------------------------------------------------------------------- */
+SELECT DISTINCT
+  CAST(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY days_seller_processing) OVER () AS DECIMAL(5,1)) AS seller_p50,
+  CAST(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY days_seller_processing) OVER () AS DECIMAL(5,1)) AS seller_p90,
+  CAST(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY days_transit)           OVER () AS DECIMAL(5,1)) AS transit_p50,
+  CAST(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY days_transit)           OVER () AS DECIMAL(5,1)) AS transit_p90,
+  CAST(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY days_total)             OVER () AS DECIMAL(5,1)) AS total_p50,
+  CAST(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY days_total)             OVER () AS DECIMAL(5,1)) AS total_p90
+FROM dw.vw_order_kpi;
+-- Result: seller 1.8 / 6.0 | transit 7.1 / 18.9 | total 10.2 / 23.1 (days, P50 / P90)
+
+
+
+
 -- #1 Analysist: Region with the worst late
 SELECT *
 FROM dw.vw_order_kpi;
